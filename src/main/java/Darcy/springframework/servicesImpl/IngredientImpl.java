@@ -29,7 +29,7 @@ public class IngredientImpl implements IngredientService {
 
 
     @Override
-    public IngredientCommand findByRecipeIdAndIngredientId(Long recipeId, Long ingredientId) {
+    public IngredientCommand findByRecipeIdAndIngredientId(String recipeId, String ingredientId) {
         Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
 
         if(!recipeOptional.isPresent()){
@@ -110,7 +110,7 @@ public class IngredientImpl implements IngredientService {
 
 
     @Override
-    public void deleteIngredientById( Long recipeId, Long InId) {
+    public void deleteIngredientById( String recipeId, String InId) {
         // 在数据库查找到recipe
         Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
 

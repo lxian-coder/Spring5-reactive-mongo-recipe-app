@@ -1,10 +1,8 @@
 package Darcy.springframework.domain;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
 
 /**
@@ -14,23 +12,15 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-@EqualsAndHashCode(exclude = "recipe")
-@Entity
 //@Table(name = "Ingerdients")
 public class Ingredient {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     //@Column(name = "descriptionsss")
     private String description;
     private BigDecimal amount;
 
-
-    @ManyToOne
     private Recipe recipe;
-
-    @OneToOne(fetch = FetchType.EAGER)
     private UnitOfMeasure  uom;
 
     public Ingredient() {
@@ -41,4 +31,12 @@ public class Ingredient {
         this.amount = amount;
         this.uom = uom;
     }
+
+    public Ingredient(String description, BigDecimal amount, UnitOfMeasure uom, Recipe recipe) {
+        this.description = description;
+        this.amount = amount;
+        this.uom = uom;
+        this.recipe = recipe;
+    }
+
 }

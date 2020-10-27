@@ -29,7 +29,7 @@ public class RecipeController {
         this.recipesService = recipesService;
     }
     @GetMapping({"/recipe/{id}/show"})
-    public String displayRecipeById (@PathVariable Long id, Model model){
+    public String displayRecipeById (@PathVariable String id, Model model){
 
         Recipe recipe = recipesService.getRecipeById(id);
         model.addAttribute("recipeId",recipesService.getRecipeById(id));
@@ -44,7 +44,7 @@ public class RecipeController {
     @GetMapping("recipe/{id}/update")
     public String updateRecipe(@PathVariable String id, Model model){
         // 从数据库里取出 recipe   然后转化为 RecipeCommand
-        model.addAttribute("recipe", recipesService.findCommandById(Long.valueOf(id)));
+        model.addAttribute("recipe", recipesService.findCommandById(id));
       return "recipe/recipeform";
     }
 
@@ -66,7 +66,7 @@ public class RecipeController {
     public String deleteById(@PathVariable String id){
         log.debug("Deleting id: " + id);
 
-        recipesService.deleteById(Long.valueOf(id));
+        recipesService.deleteById(id);
         return "redirect:/";
     }
     @ResponseStatus(HttpStatus.NOT_FOUND)

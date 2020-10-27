@@ -32,7 +32,7 @@ public class IngredientController {
     public String listIngredients(@PathVariable String id, Model model) throws Exception {
         log.debug("Getting ingredient list for recipe id: " + id);
 
-        model.addAttribute("recipe", recipesService.findCommandById(Long.valueOf(id)));
+        model.addAttribute("recipe", recipesService.findCommandById(id));
 
         return "recipe/ingredient/list";
     }
@@ -40,14 +40,14 @@ public class IngredientController {
     @GetMapping("/recipe/{idR}/ingredient/{idI}/show")
     public String showIngredient(@PathVariable String idR,
                                  @PathVariable String idI, Model model) {
-        model.addAttribute("ingredient", ingredientService.findByRecipeIdAndIngredientId(Long.valueOf(idR), Long.valueOf(idI)));
+        model.addAttribute("ingredient", ingredientService.findByRecipeIdAndIngredientId(idR, idI));
         return "recipe/ingredient/show";
     }
 
     @GetMapping("/recipe/{recipeId}/ingredient/{ingredientId}/update")
     public String updateRecipeIngredient(@PathVariable String recipeId,
                                          @PathVariable String ingredientId, Model model) {
-        model.addAttribute("ingredient", ingredientService.findByRecipeIdAndIngredientId(Long.valueOf(recipeId), Long.valueOf(ingredientId)));
+        model.addAttribute("ingredient", ingredientService.findByRecipeIdAndIngredientId(recipeId, ingredientId));
         model.addAttribute("uomList", unitOfMeassureService.listAllUoms());
 
         return "/recipe/ingredient/ingredientform";
@@ -64,12 +64,12 @@ public class IngredientController {
     @GetMapping("/recipe/{recipeId}/ingredient/new")
     public String addNewIngredient(@PathVariable String recipeId,Model model){
         // make sure we have a good id value
-        RecipeCommand recipeCommand = recipesService.findCommandById(Long.valueOf(recipeId));
+        RecipeCommand recipeCommand = recipesService.findCommandById(recipeId);
         // todo raise exception if null
 
         // need to return back parent id for hidden form property
         IngredientCommand ingredientCommand = new IngredientCommand();
-        ingredientCommand.setRecipeId(Long.valueOf(recipeId));
+        ingredientCommand.setRecipeId(recipeId);
         // init uom
         ingredientCommand.setUomC(new UnitOfMeasureCommand());
 
@@ -81,7 +81,7 @@ public class IngredientController {
     public String deleteIngredient(@PathVariable String recipeId,
                                    @PathVariable String inId){
 
-        ingredientService.deleteIngredientById(Long.valueOf(recipeId),Long.valueOf(inId));
+        ingredientService.deleteIngredientById(recipeId,inId);
 
         return "redirect:/recipe/"+recipeId+"/ingredients";
     }

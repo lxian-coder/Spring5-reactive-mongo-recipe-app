@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository;
  * Author: Darcy Xian  2020/8/711:42
  */
 @Repository
-public interface RecipeRepository extends CrudRepository<Recipe,Long> {
+public interface RecipeRepository extends CrudRepository<Recipe,String> {
 }

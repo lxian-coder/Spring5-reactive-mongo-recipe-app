@@ -1,8 +1,7 @@
 package Darcy.springframework.domain;
 
-import lombok.*;
-
-import javax.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,17 +11,14 @@ import java.util.Set;
  * Author: Darcy Xian  2020/8/610:49
  */
 //@Data
-@Data
-@EqualsAndHashCode(exclude = "recipe")
-@Entity
+@Getter
+@Setter
+
 public class Category {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     private String description;
 
-  @ManyToMany(mappedBy = "categories")
    private Set<Recipe> recipe = new HashSet<>();
 
 }

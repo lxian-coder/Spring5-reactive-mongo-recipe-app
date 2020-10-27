@@ -1,8 +1,8 @@
 package Darcy.springframework.domain;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
-import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -11,13 +11,14 @@ import javax.persistence.Id;
  * spring5-recipe-app
  * Author: Darcy Xian  2020/8/516:49
  */
-@Data
-@Entity
+@Getter
+@Setter
+
 public class UnitOfMeasure {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String description;
 

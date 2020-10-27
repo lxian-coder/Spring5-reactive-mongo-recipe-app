@@ -33,7 +33,7 @@ private final RecipeCommandToRecipe commandToRecipe;
     }
 
     @Override
-    public Recipe getRecipeById(Long id) {
+    public Recipe getRecipeById(String id) {
 
         Optional<Recipe> recipeOptional = recipeRepository.findById(id);
 
@@ -53,13 +53,13 @@ private final RecipeCommandToRecipe commandToRecipe;
     }
 
     @Override
-    public RecipeCommand findCommandById(Long l) {
+    public RecipeCommand findCommandById(String l) {
 
         return recipeToCommand.convert(getRecipeById(l));
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void deleteById(String id) {
         recipeRepository.deleteById(id);
     }
 }

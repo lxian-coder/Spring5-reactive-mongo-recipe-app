@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class findRecipeHandler {
     private final RecipesService recipesService;
 
-    public Recipe findRecipeById(Long id) {
+    public Recipe findRecipeById(String id) {
         if (id != null) {
             Recipe recipe = recipesService.getRecipeById(id);
             return recipe;

@@ -33,7 +33,7 @@ public class ImageController {
     @GetMapping("recipe/{id}/image")
     public String showUploadForm(@PathVariable String id, Model model){
 
-        model.addAttribute("recipe", recipesService.findCommandById(Long.valueOf(id)));
+        model.addAttribute("recipe", recipesService.findCommandById(id));
 
         return "recipe/imageuploadform";
     }
@@ -41,7 +41,7 @@ public class ImageController {
     @PostMapping("recipe/{id}/image")
     public String handleImagePost(@PathVariable String id,
                                   @RequestParam("imagefile") MultipartFile file){
-        imageService.saveImageFile(Long.valueOf(id),file);
+        imageService.saveImageFile(id,file);
 
         return "redirect:/recipe/" + id + "/show";
     }
@@ -49,7 +49,7 @@ public class ImageController {
     public void renderImageFromDb(@PathVariable String id,
                                   HttpServletResponse response) throws IOException{
         //HttpServletResponse 是web服务器向客户端发送数据
-        RecipeCommand recipeCommand = recipesService.findCommandById(Long.valueOf(id));
+        RecipeCommand recipeCommand = recipesService.findCommandById(id);
 
         byte[] byteArray = new byte[recipeCommand.getImage().length];
 
@@ -60,7 +60,7 @@ public class ImageController {
 
         response.setContentType("image/jpeg");
         InputStream is = new ByteArrayInputStream(byteArray);
-         // IOUtils is going to copy from the bytearray input stream to the
+         // IOUtils is going to copy from the byte array input stream to the
         // response outputStream
         log.debug("i am in recipeimage");
         IOUtils.copy(is,response.getOutputStream());
