@@ -5,12 +5,16 @@ import Darcy.springframework.domain.*;
 import Darcy.springframework.repositories.CategoryRepository;
 import Darcy.springframework.repositories.RecipeRepository;
 import Darcy.springframework.repositories.UnitOfMeasureRepository;
+import Darcy.springframework.repositories.reactive.CategoryReactiveRepository;
+import Darcy.springframework.repositories.reactive.RecipeReactiveRepository;
+import Darcy.springframework.repositories.reactive.UnitOfMeasureReactiveRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,22 +26,95 @@ import java.util.Optional;
  */
 @Slf4j
 @Component
-@Profile("default")
-// this is going to be going with the H2 database
+
 public class RecipeBootstrap  implements ApplicationListener<ContextRefreshedEvent>{
     private final CategoryRepository categoryRepository;
     private final RecipeRepository recipeRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
 
-    public RecipeBootstrap(CategoryRepository categoryRepository, RecipeRepository recipeRepository, UnitOfMeasureRepository unitOfMeasureRepository) {
+    @Autowired
+    UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository;
+    @Autowired
+    CategoryReactiveRepository categoryReactiveRepository;
+    @Autowired
+    RecipeReactiveRepository recipeReactiveRepository;
+
+
+    public RecipeBootstrap(UnitOfMeasureRepository unitOfMeasureRepository, CategoryRepository categoryRepository, RecipeRepository recipeRepository) {
         this.categoryRepository = categoryRepository;
         this.recipeRepository = recipeRepository;
         this.unitOfMeasureRepository = unitOfMeasureRepository;
     }
 
     @Override
+    @Transactional
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
+
+
+        loadCategories();
+        loadUom();
         recipeRepository.saveAll(getRecipes());
+        log.debug("Loading Bootstrap Data");
+
+        // just for fun
+        log.error("#####");
+        log.error("UOM Count:"+ unitOfMeasureReactiveRepository.count().block().toString());
+        log.error("Category Count:" + categoryReactiveRepository.count().block().toString());
+        log.error("Recipe Count:"+ recipeReactiveRepository.count().block().toString());
+    }
+
+    private void loadCategories(){
+        Category cat1 = new Category();
+        cat1.setDescription("American");
+        categoryRepository.save(cat1);
+
+        Category cat2 = new Category();
+        cat2.setDescription("Italian");
+        categoryRepository.save(cat2);
+
+        Category cat3 = new Category();
+        cat3.setDescription("Mexican");
+        categoryRepository.save(cat3);
+
+        Category cat4 = new Category();
+        cat4.setDescription("Fast Food");
+        categoryRepository.save(cat4);
+    }
+
+    private void loadUom(){
+        UnitOfMeasure uom1 = new UnitOfMeasure();
+        uom1.setDescription("Teaspoon");
+        unitOfMeasureRepository.save(uom1);
+
+
+        UnitOfMeasure uom2 = new UnitOfMeasure();
+        uom2.setDescription("Tablespoon");
+        unitOfMeasureRepository.save(uom2);
+
+        UnitOfMeasure uom3 = new UnitOfMeasure();
+        uom3.setDescription("Cup");
+        unitOfMeasureRepository.save(uom3);
+
+        UnitOfMeasure uom4 = new UnitOfMeasure();
+        uom4.setDescription("Pinch");
+        unitOfMeasureRepository.save(uom4);
+
+        UnitOfMeasure uom5 = new UnitOfMeasure();
+        uom5.setDescription("Ounce");
+        unitOfMeasureRepository.save(uom5);
+
+        UnitOfMeasure uom6 = new UnitOfMeasure();
+        uom6.setDescription("Each");
+        unitOfMeasureRepository.save(uom6);
+
+        UnitOfMeasure uom7 = new UnitOfMeasure();
+        uom7.setDescription("Pint");
+        unitOfMeasureRepository.save(uom7);
+
+        UnitOfMeasure uom8 = new UnitOfMeasure();
+        uom8.setDescription("Dash");
+        unitOfMeasureRepository.save(uom8);
+
     }
 
     private List<Recipe> getRecipes() {
@@ -68,7 +145,7 @@ public class RecipeBootstrap  implements ApplicationListener<ContextRefreshedEve
             throw new RuntimeException("Expected UOM Tablespoon not found.");
         }
 
-        Optional<UnitOfMeasure> checkCub = unitOfMeasureRepository.findByDescription("Cub");
+        Optional<UnitOfMeasure> checkCub = unitOfMeasureRepository.findByDescription("Cup");
         if(!checkCub.isPresent()){
             throw new RuntimeException("Expected UOM Cub not found.");
         }
@@ -192,7 +269,7 @@ public class RecipeBootstrap  implements ApplicationListener<ContextRefreshedEve
         // recipe notes
         Notes tacosNotes = new Notes();
         tacosNotes.setRecipeNotes("Look for ancho chile powder with the Mexican ingredients at your grocery store, on buy it online. (If you can't find ancho chili powder, you replace the ancho chili, the oregano, and the cumin with 2 1/2 tablespoons regular chili powder, though the flavor won't be quite the same.)");
-        tacosNotes.setRecipe(tacosRecipe);
+
         tacosRecipe.setNotes(tacosNotes);
 
         // descriptions

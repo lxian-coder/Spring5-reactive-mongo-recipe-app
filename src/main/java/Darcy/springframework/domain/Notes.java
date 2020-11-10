@@ -2,6 +2,7 @@ package Darcy.springframework.domain;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
 
 /**
  * spring5-recipe-app
@@ -13,13 +14,8 @@ import lombok.Setter;
 @Setter
 
 public class Notes {
-
+    @Id
     private String id;
-
-
-    private Recipe recipe;
-
-
     private String recipeNotes;
 
 

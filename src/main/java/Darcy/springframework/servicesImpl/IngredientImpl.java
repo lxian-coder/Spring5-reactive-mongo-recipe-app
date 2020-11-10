@@ -82,7 +82,7 @@ public class IngredientImpl implements IngredientService {
             }else{
                 // 如果没有储存这个ingredient, 就在这个recipe里加上这个ingredent
                 Ingredient ingredient = ingredientCommandToIngredient.convert(command);
-                ingredient.setRecipe(recipe);
+               // ingredient.setRecipe(recipe);
                 recipe.addIngredient(ingredient);
             }
             // 储存修改过的recipe
@@ -104,7 +104,11 @@ public class IngredientImpl implements IngredientService {
             }
 
             //to do check for fail
-            return ingredientToIngredientCommand.convert(savedIngredientOptional.get());
+            // enhance with id value
+            IngredientCommand ingredientCommandSaved = ingredientToIngredientCommand.convert(savedIngredientOptional.get());
+            ingredientCommandSaved.setRecipeId(recipe.getId());
+
+            return ingredientCommandSaved;
         }
     }
 
@@ -127,7 +131,7 @@ public class IngredientImpl implements IngredientService {
                 Ingredient ingredient = ingredientOptional.get();
                 //取消双向关系
                 recipe.getIngredients().remove(ingredient);
-                ingredient.setRecipe(null);
+                //ingredient.setRecipe(null);
                 //重新储存recipe
                 Recipe savedRecipe = recipeRepository.save(recipe);
             }else {

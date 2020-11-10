@@ -2,10 +2,8 @@ package Darcy.springframework.domain;
 
 import lombok.Getter;
 import lombok.Setter;
-
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * spring5-recipe-app
@@ -13,13 +11,12 @@ import javax.persistence.Id;
  */
 @Getter
 @Setter
-
+@Document
+// mongodb document
 public class UnitOfMeasure {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String id;
-
     private String description;
 
 }

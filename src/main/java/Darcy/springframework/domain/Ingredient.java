@@ -2,8 +2,10 @@ package Darcy.springframework.domain;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
  * spring5-recipe-app
@@ -15,12 +17,12 @@ import java.math.BigDecimal;
 //@Table(name = "Ingerdients")
 public class Ingredient {
 
-    private String id;
+    private String id = UUID.randomUUID().toString();
     //@Column(name = "descriptionsss")
     private String description;
     private BigDecimal amount;
 
-    private Recipe recipe;
+    @DBRef
     private UnitOfMeasure  uom;
 
     public Ingredient() {
@@ -36,7 +38,7 @@ public class Ingredient {
         this.description = description;
         this.amount = amount;
         this.uom = uom;
-        this.recipe = recipe;
+        //this.recipe = recipe;
     }
 
 }
