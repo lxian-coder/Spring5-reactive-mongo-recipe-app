@@ -7,10 +7,13 @@ import Darcy.springframework.domain.Ingredient;
 import Darcy.springframework.domain.Recipe;
 import Darcy.springframework.repositories.RecipeRepository;
 import Darcy.springframework.repositories.UnitOfMeasureRepository;
+import Darcy.springframework.repositories.reactive.RecipeReactiveRepository;
+import Darcy.springframework.repositories.reactive.UnitOfMeasureReactiveRepository;
 import Darcy.springframework.services.IngredientService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -23,42 +26,84 @@ import java.util.Optional;
 public class IngredientImpl implements IngredientService {
 
     private final IngredientToIngredientCommand ingredientToIngredientCommand;
+    private final RecipeReactiveRepository recipeReactiveRepository;
+    private final UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository;
+    private final IngredientCommandToIngredient ingredientCommandToIngredient;
     private final RecipeRepository recipeRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
-    private final IngredientCommandToIngredient ingredientCommandToIngredient;
-
 
     @Override
-    public IngredientCommand findByRecipeIdAndIngredientId(String recipeId, String ingredientId) {
-        Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
+    public Mono<IngredientCommand> findByRecipeIdAndIngredientId(String recipeId, String ingredientId) {
+                      // reactive 的解决方式
+        return recipeReactiveRepository
+                 // 找到 recipe
+                .findById(recipeId)
+                 // 抽取出 Ingredient iterabel
+                .flatMapIterable(Recipe::getIngredients)
+                  // 找到特定的ingredient
+                .filter(ingredient -> ingredient.getId().equalsIgnoreCase(ingredientId))
+                .single()
 
-        if(!recipeOptional.isPresent()){
-            //todo impl error handling
-            log.error("recipe id not found. Id: " + recipeId);
-        }
+                .map(ingredient -> {
+                    IngredientCommand command = ingredientToIngredientCommand.convert(ingredient);
+                    command.setRecipeId(recipeId);
+                    return command;
+                });
 
-        Recipe recipe = recipeOptional.get();
 
-        Optional<IngredientCommand> ingredientCommandOptional = recipe.getIngredients().stream()
-                .filter(ingredient -> ingredient.getId().equals(ingredientId))
-                .map( ingredient -> ingredientToIngredientCommand.convert(ingredient)).findFirst();
 
-        if(!ingredientCommandOptional.isPresent()){
-            //todo impl error handling
-            log.error("Ingredient id not found: "+ingredientId);
-        }
-        return ingredientCommandOptional.get();
+
+
+
+
+        //                 // 找到recipe    正常的java5 stream 的解决方式
+//        return recipeReactiveRepository.findById(recipeId)
+//                 // 在recipe里找到ingredient
+//                .map(recipe -> recipe.getIngredients()
+//                      .stream()
+//                      .filter(ingredient -> ingredient.getId().equalsIgnoreCase(ingredientId))
+//                       .findFirst())
+//                // 验证ingredient is present
+//                .filter(Optional::isPresent)
+//                // 因为ingredient 是没有recipe关联的，所以我们要给它打上recipe ID
+//                .map(ingredient -> {
+//                    IngredientCommand command = ingredientToIngredientCommand.convert(ingredient.get());
+//                    command.setRecipeId(recipeId);
+//                    return command;
+//                });
+
+        //        Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
+//
+//        if(!recipeOptional.isPresent()){
+//            //todo impl error handling
+//            log.error("recipe id not found. Id: " + recipeId);
+//        }
+//        log.debug("recipeId:"+recipeId);
+//        log.debug("ingredientId:"+ingredientId);
+//
+//        Recipe recipe = recipeOptional.get();
+//
+//        Optional<IngredientCommand> ingredientCommandOptional = recipe.getIngredients().stream()
+//                .filter(ingredient -> ingredient.getId().equals(ingredientId))
+//                .map( ingredient -> ingredientToIngredientCommand.convert(ingredient)).findFirst();
+//
+//        if(!ingredientCommandOptional.isPresent()){
+//            //todo impl error handling
+//            log.error("Ingredient id not found: "+ingredientId);
+//        }
+//        return Mono.just(ingredientCommandOptional.get());
     }
 
     @Override
-    public IngredientCommand saveIngredientCommand(IngredientCommand command) {
+    public Mono<IngredientCommand> saveIngredientCommand(IngredientCommand command) {
 
         // 当ingredient 传进来后，先查找数据库里的recipe
         Optional<Recipe> recipeOptional = recipeRepository.findById(command.getRecipeId());
 
         if(!recipeOptional.isPresent()){
             log.error("Recipe not found for id :"+command.getId());
-            return new IngredientCommand();
+            log.error("ingredientCommand getRecipeId:"+command.getRecipeId());
+            return Mono.just(new IngredientCommand());
         }else {
             Recipe recipe = recipeOptional.get();
             // 查找数据库如果存在这个recipe, 那么查找这个recipe有没有这个要储存的ingredient；
@@ -108,13 +153,16 @@ public class IngredientImpl implements IngredientService {
             IngredientCommand ingredientCommandSaved = ingredientToIngredientCommand.convert(savedIngredientOptional.get());
             ingredientCommandSaved.setRecipeId(recipe.getId());
 
-            return ingredientCommandSaved;
+            return Mono.just(ingredientCommandSaved);
         }
     }
 
 
     @Override
-    public void deleteIngredientById( String recipeId, String InId) {
+    public Mono<Void> deleteIngredientById(String recipeId, String InId) {
+        log.debug("Deleting ingredient: " + recipeId+": "+InId);
+        Recipe recipeReactive = recipeReactiveRepository.findById(recipeId).block();
+
         // 在数据库查找到recipe
         Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
 
@@ -136,12 +184,13 @@ public class IngredientImpl implements IngredientService {
                 Recipe savedRecipe = recipeRepository.save(recipe);
             }else {
                 log.error("not found ingredient ID:" + InId );
-                return;
+
             }
         }else {
             log.error("not found Recipe ID:" + recipeId);
-            return;
+
         }
+        return Mono.empty();
     }
 }
 

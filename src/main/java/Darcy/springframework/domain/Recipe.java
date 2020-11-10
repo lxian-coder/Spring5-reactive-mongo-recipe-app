@@ -33,7 +33,6 @@ public class Recipe {
     private Byte[] image;
 
     private Notes notes;
-
     private Set<Ingredient> ingredients = new HashSet<>() ;
     @DBRef
     private Set<Category> categories = new HashSet<>() ;

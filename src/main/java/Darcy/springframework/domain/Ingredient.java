@@ -3,6 +3,7 @@ package Darcy.springframework.domain;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -15,13 +16,15 @@ import java.util.UUID;
 @Getter
 @Setter
 //@Table(name = "Ingerdients")
+@Document
 public class Ingredient {
 
-    private String id = UUID.randomUUID().toString();
+     private String id = UUID.randomUUID().toString();
     //@Column(name = "descriptionsss")
+
+
     private String description;
     private BigDecimal amount;
-
     @DBRef
     private UnitOfMeasure  uom;
 
