@@ -3,7 +3,6 @@ package Darcy.springframework.domain;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.HashSet;
@@ -34,15 +33,16 @@ public class Recipe {
 
     private Notes notes;
     private Set<Ingredient> ingredients = new HashSet<>() ;
-    @DBRef
+
     private Set<Category> categories = new HashSet<>() ;
 
     public Recipe() {
     }
 
-    public void setNotes(Notes notes) {
+    public Notes setNotes(Notes notes) {
         this.notes = notes;
        // notes.setRecipe(this);
+        return notes;
     }
     public Recipe addIngredient(Ingredient ingredient){
         this.getIngredients().add(ingredient);

@@ -17,7 +17,7 @@ public class findRecipeHandler {
 
     public Recipe findRecipeById(String id) {
         if (id != null) {
-            Recipe recipe = recipesService.getRecipeById(id);
+            Recipe recipe = recipesService.getRecipeById(id).block();
             return recipe;
         } else {
             log.error("The Recipe ID is null :" + id);

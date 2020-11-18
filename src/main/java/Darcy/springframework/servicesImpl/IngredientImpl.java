@@ -5,10 +5,8 @@ import Darcy.springframework.converters.IngredientCommandToIngredient;
 import Darcy.springframework.converters.IngredientToIngredientCommand;
 import Darcy.springframework.domain.Ingredient;
 import Darcy.springframework.domain.Recipe;
-import Darcy.springframework.repositories.RecipeRepository;
 import Darcy.springframework.repositories.UnitOfMeasureRepository;
 import Darcy.springframework.repositories.reactive.RecipeReactiveRepository;
-import Darcy.springframework.repositories.reactive.UnitOfMeasureReactiveRepository;
 import Darcy.springframework.services.IngredientService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +25,7 @@ public class IngredientImpl implements IngredientService {
 
     private final IngredientToIngredientCommand ingredientToIngredientCommand;
     private final RecipeReactiveRepository recipeReactiveRepository;
-    private final UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository;
     private final IngredientCommandToIngredient ingredientCommandToIngredient;
-    private final RecipeRepository recipeRepository;
     private final UnitOfMeasureRepository unitOfMeasureRepository;
 
     @Override
@@ -50,62 +46,18 @@ public class IngredientImpl implements IngredientService {
                     return command;
                 });
 
-
-
-
-
-
-
-        //                 // 找到recipe    正常的java5 stream 的解决方式
-//        return recipeReactiveRepository.findById(recipeId)
-//                 // 在recipe里找到ingredient
-//                .map(recipe -> recipe.getIngredients()
-//                      .stream()
-//                      .filter(ingredient -> ingredient.getId().equalsIgnoreCase(ingredientId))
-//                       .findFirst())
-//                // 验证ingredient is present
-//                .filter(Optional::isPresent)
-//                // 因为ingredient 是没有recipe关联的，所以我们要给它打上recipe ID
-//                .map(ingredient -> {
-//                    IngredientCommand command = ingredientToIngredientCommand.convert(ingredient.get());
-//                    command.setRecipeId(recipeId);
-//                    return command;
-//                });
-
-        //        Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
-//
-//        if(!recipeOptional.isPresent()){
-//            //todo impl error handling
-//            log.error("recipe id not found. Id: " + recipeId);
-//        }
-//        log.debug("recipeId:"+recipeId);
-//        log.debug("ingredientId:"+ingredientId);
-//
-//        Recipe recipe = recipeOptional.get();
-//
-//        Optional<IngredientCommand> ingredientCommandOptional = recipe.getIngredients().stream()
-//                .filter(ingredient -> ingredient.getId().equals(ingredientId))
-//                .map( ingredient -> ingredientToIngredientCommand.convert(ingredient)).findFirst();
-//
-//        if(!ingredientCommandOptional.isPresent()){
-//            //todo impl error handling
-//            log.error("Ingredient id not found: "+ingredientId);
-//        }
-//        return Mono.just(ingredientCommandOptional.get());
     }
 
     @Override
-    public Mono<IngredientCommand> saveIngredientCommand(IngredientCommand command) {
+    public void saveIngredientCommand(IngredientCommand command) {
 
         // 当ingredient 传进来后，先查找数据库里的recipe
-        Optional<Recipe> recipeOptional = recipeRepository.findById(command.getRecipeId());
+       recipeReactiveRepository.findById(command.getRecipeId()).subscribe( recipe -> {
 
-        if(!recipeOptional.isPresent()){
+        if(recipe == null){
             log.error("Recipe not found for id :"+command.getId());
             log.error("ingredientCommand getRecipeId:"+command.getRecipeId());
-            return Mono.just(new IngredientCommand());
         }else {
-            Recipe recipe = recipeOptional.get();
             // 查找数据库如果存在这个recipe, 那么查找这个recipe有没有这个要储存的ingredient；
             Optional<Ingredient> ingredientOptional = recipe
                     .getIngredients()
@@ -117,71 +69,56 @@ public class IngredientImpl implements IngredientService {
                 Ingredient ingredientFound = ingredientOptional.get();
                 ingredientFound.setDescription(command.getDescription());
                 ingredientFound.setAmount(command.getAmount());
+                ingredientFound.setId(command.getId());
                 // uomC 从form传过来只有ID， description是null； 所以查找这uom的id 给它赋值；
                 if(command.getUomC()!=null) {
                     ingredientFound.setUom(unitOfMeasureRepository.findById(command.getUomC().getId())
-                            .orElseThrow(() -> new RuntimeException("UOM not found")));
+                            .orElseThrow(() -> new RuntimeException("UOC can't find."))
+                    );
                 }else {
                     ingredientFound.setUom(null);
                 }
             }else{
                 // 如果没有储存这个ingredient, 就在这个recipe里加上这个ingredent
+
                 Ingredient ingredient = ingredientCommandToIngredient.convert(command);
+                // uomC 从form传过来只有ID， description是null； 所以查找这uom的id 给它赋值；
+                ingredient.setUom(unitOfMeasureRepository.findById(command.getUomC().getId())
+                        .orElseThrow(() -> new RuntimeException("Uoc can't find")));
                // ingredient.setRecipe(recipe);
                 recipe.addIngredient(ingredient);
             }
             // 储存修改过的recipe
-            Recipe savedRecipe = recipeRepository.save(recipe);
+            recipeReactiveRepository.save(recipe).subscribe();
 
-            //回到新储存的 savedRecipe 里面寻找和 command 相同ID的ingredient；
-            Optional<Ingredient> savedIngredientOptional = savedRecipe.getIngredients().stream()
-                    .filter(recipeIngredients -> recipeIngredients.getId().equals(command.getId()))
-                    .findFirst();
 
-            //check by description
-            if(!savedIngredientOptional.isPresent()){
-                // not totally safe.. But best guess
-                savedIngredientOptional = savedRecipe.getIngredients().stream()
-                        .filter(reipeIngredients -> reipeIngredients.getDescription().equals(command.getDescription()))
-                        .filter(ingredient -> ingredient.getAmount().equals(command.getAmount()))
-                        .filter(ingredient -> ingredient.getUom().getId().equals(command.getUomC().getId()))
-                        .findFirst();
-            }
-
-            //to do check for fail
-            // enhance with id value
-            IngredientCommand ingredientCommandSaved = ingredientToIngredientCommand.convert(savedIngredientOptional.get());
-            ingredientCommandSaved.setRecipeId(recipe.getId());
-
-            return Mono.just(ingredientCommandSaved);
         }
+    });
     }
-
 
     @Override
     public Mono<Void> deleteIngredientById(String recipeId, String InId) {
         log.debug("Deleting ingredient: " + recipeId+": "+InId);
-        Recipe recipeReactive = recipeReactiveRepository.findById(recipeId).block();
+
 
         // 在数据库查找到recipe
-        Optional<Recipe> recipeOptional = recipeRepository.findById(recipeId);
+         recipeReactiveRepository.findById(recipeId).subscribe(result ->{
 
-        if(recipeOptional.isPresent()){
+        if(result != null){
            log.debug("recipe find ID :"+recipeId);
            //确认有recipe,然后查找ingredient
-            Recipe recipe = recipeOptional.get();
 
-            Optional<Ingredient> ingredientOptional = recipe.getIngredients().stream()
+            Optional<Ingredient> ingredientOptional = result.getIngredients().stream()
                                 .filter(ingredient -> ingredient.getId().equals(InId))
                                 .findFirst();
             if(ingredientOptional.isPresent()){
                 //确认有ingredient
                 Ingredient ingredient = ingredientOptional.get();
                 //取消双向关系
-                recipe.getIngredients().remove(ingredient);
+                result.getIngredients().remove(ingredient);
                 //ingredient.setRecipe(null);
                 //重新储存recipe
-                Recipe savedRecipe = recipeRepository.save(recipe);
+             recipeReactiveRepository.save(result).subscribe();
             }else {
                 log.error("not found ingredient ID:" + InId );
 
@@ -189,7 +126,7 @@ public class IngredientImpl implements IngredientService {
         }else {
             log.error("not found Recipe ID:" + recipeId);
 
-        }
+        }});
         return Mono.empty();
     }
 }

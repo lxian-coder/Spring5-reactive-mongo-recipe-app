@@ -22,7 +22,10 @@ public class IndexController {
     public String getRecipeList(Model model){
         log.debug("I am in index controller");
 
-         model.addAttribute("recipes", recipesService.getRecipe());
+         model.addAttribute("recipes", recipesService.getRecipes());
+
+
+
          return "index";
     }
 

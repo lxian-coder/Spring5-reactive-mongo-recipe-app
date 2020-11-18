@@ -4,14 +4,13 @@ import Darcy.springframework.commands.RecipeCommand;
 import Darcy.springframework.converters.RecipeCommandToRecipe;
 import Darcy.springframework.converters.RecipeToRecipeCommand;
 import Darcy.springframework.domain.Recipe;
-import Darcy.springframework.exceptions.NotFoundException;
-import Darcy.springframework.repositories.RecipeRepository;
+import Darcy.springframework.repositories.reactive.RecipeReactiveRepository;
 import Darcy.springframework.services.RecipesService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 @Slf4j
@@ -19,47 +18,59 @@ import java.util.Optional;
 @Service
 public class RecipeServiceImpl implements RecipesService {
 
-private final RecipeRepository recipeRepository;
+private final RecipeReactiveRepository recipeReactiveRepository;
 private final RecipeToRecipeCommand recipeToCommand;
 private final RecipeCommandToRecipe commandToRecipe;
 
 
 
     @Override
-    public Iterable<Recipe> getRecipe() {
+    public Flux<Recipe> getRecipes() {
         log.debug("I am in recipeserviceImpl");
-       return recipeRepository.findAll();
+       return recipeReactiveRepository.findAll();
 
     }
 
     @Override
-    public Recipe getRecipeById(String id) {
+    public Mono<Recipe> getRecipeById(String id) {
 
-        Optional<Recipe> recipeOptional = recipeRepository.findById(id);
-
-        if(!recipeOptional.isPresent()){
-            throw new NotFoundException("Recipe Not Found, For ID value: " + id.toString());
-        }
-        return recipeOptional.get();
+           return recipeReactiveRepository.findById(id);
     }
 
     @Override
-    public RecipeCommand saveRecipeCommand(RecipeCommand recipeCommand) {
-        Recipe detacheRecipe = commandToRecipe.convert(recipeCommand);
-        Recipe savedRecipe = recipeRepository.save(detacheRecipe);
-        log.debug("Saved RecipeId:" + savedRecipe.getId());
+    public Mono<RecipeCommand> saveRecipeCommand(RecipeCommand recipeCommand) {
 
-        return recipeToCommand.convert(savedRecipe);
+        return recipeReactiveRepository.save(commandToRecipe.convert(recipeCommand))
+                .map(recipeToCommand::convert);
     }
 
     @Override
-    public RecipeCommand findCommandById(String l) {
+    public Mono<RecipeCommand> findCommandById(String l) {
+      // 新版本
+        return recipeReactiveRepository.findById(l)
+                .map(recipe -> {
+                    RecipeCommand recipeCommand = recipeToCommand.convert(recipe);
 
-        return recipeToCommand.convert(getRecipeById(l));
+                    recipeCommand.getIngredients().forEach(rc -> {
+                        rc.setRecipeId(recipeCommand.getId());
+                    });
+
+                    return recipeCommand;
+                });
+
+        // 老版本
+        //  RecipeCommand recipeCommand = recipeToCommand.convert(getRecipeById(l).block());
+//        // enhance command object with id value
+//        if (recipeCommand.getIngredients() != null && recipeCommand.getIngredients().size()>0){
+//            recipeCommand.getIngredients().forEach(rc -> {
+//                rc.setRecipeId(recipeCommand.getId());
+//            });
+
     }
 
     @Override
     public void deleteById(String id) {
-        recipeRepository.deleteById(id);
+        recipeReactiveRepository.deleteById(id).subscribe();
+
     }
 }

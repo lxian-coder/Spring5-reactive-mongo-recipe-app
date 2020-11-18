@@ -1,11 +1,9 @@
 package Darcy.springframework.controllers;
 
-import Darcy.springframework.commands.RecipeCommand;
 import Darcy.springframework.services.ImageService;
 import Darcy.springframework.services.RecipesService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,10 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+
 
 /**
  * Darcy Xian  6/9/20  3:11 pm      spring5-recipe-app
@@ -41,31 +36,37 @@ public class ImageController {
     @PostMapping("recipe/{id}/image")
     public String handleImagePost(@PathVariable String id,
                                   @RequestParam("imagefile") MultipartFile file){
-        imageService.saveImageFile(id,file);
+        imageService.saveImageFile(id,file).block();
 
         return "redirect:/recipe/" + id + "/show";
     }
-    @GetMapping("recipe/{id}/recipeimage")
-    public void renderImageFromDb(@PathVariable String id,
-                                  HttpServletResponse response) throws IOException{
-        //HttpServletResponse 是web服务器向客户端发送数据
-        RecipeCommand recipeCommand = recipesService.findCommandById(id);
 
-        byte[] byteArray = new byte[recipeCommand.getImage().length];
 
-        int i = 0;
-        for(Byte wrappedByte : recipeCommand.getImage()){
-            byteArray[i++] = wrappedByte; //auto unboxing
-        }
 
-        response.setContentType("image/jpeg");
-        InputStream is = new ByteArrayInputStream(byteArray);
-         // IOUtils is going to copy from the byte array input stream to the
-        // response outputStream
-        log.debug("i am in recipeimage");
-        IOUtils.copy(is,response.getOutputStream());
 
-    }
+
+    //已经淘汰了 serlvet
+//    @GetMapping("recipe/{id}/recipeimage")
+//    public void renderImageFromDb(@PathVariable String id,
+//                                  HttpServletResponse response) throws IOException{
+//        //HttpServletResponse 是web服务器向客户端发送数据
+//        RecipeCommand recipeCommand = recipesService.findCommandById(id).block();
+//
+//        byte[] byteArray = new byte[recipeCommand.getImage().length];
+//
+//        int i = 0;
+//        for(Byte wrappedByte : recipeCommand.getImage()){
+//            byteArray[i++] = wrappedByte; //auto unboxing
+//        }
+//
+//        response.setContentType("image/jpeg");
+//        InputStream is = new ByteArrayInputStream(byteArray);
+//         // IOUtils is going to copy from the byte array input stream to the
+//        // response outputStream
+//        log.debug("i am in recipeimage");
+//        IOUtils.copy(is,response.getOutputStream());
+//
+//    }
 }
 
 

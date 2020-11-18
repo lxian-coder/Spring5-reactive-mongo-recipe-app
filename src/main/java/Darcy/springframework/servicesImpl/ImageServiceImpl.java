@@ -1,12 +1,13 @@
 package Darcy.springframework.servicesImpl;
 
 import Darcy.springframework.domain.Recipe;
-import Darcy.springframework.repositories.RecipeRepository;
+import Darcy.springframework.repositories.reactive.RecipeReactiveRepository;
 import Darcy.springframework.services.ImageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 
@@ -18,30 +19,58 @@ import java.io.IOException;
 @Service
 public class ImageServiceImpl implements ImageService {
 
-    private final RecipeRepository recipeRepository;
+    private final RecipeReactiveRepository recipeReactiveRepository;
 
     @Override
-    public void saveImageFile(String recipeId, MultipartFile file) {
+    public Mono<Void> saveImageFile(String recipeId, MultipartFile file) {
 
-        log.debug("Received a file.");
-        try{
-            Recipe recipe = recipeRepository.findById(recipeId).get();
-            //按照MultipartFile的长度  建立Byte[]
-            Byte[] bytesObjects = new Byte[file.getBytes().length];
+        // 新版
+      Mono<Recipe> recipeMono =  recipeReactiveRepository.findById(recipeId)
+                .map(recipe -> {
+                    Byte[] byteObjects = new Byte[0];
+                    try{
+                        byteObjects = new Byte[file.getBytes().length];
 
-            int i = 0;
-            // 用byte  把file文件的值全部复制出来
-            for (byte b : file.getBytes()){
-                bytesObjects[i++] = b;
-            }
+                        int i = 0;
 
-            recipe.setImage(bytesObjects);
+                        for (byte b : file.getBytes()){
+                            byteObjects[i++] = b;
+                        }
 
-            recipeRepository.save(recipe);
-        }catch (IOException e){
-            //todo handle better
-            log.error("Error occurred",e);
-            e.printStackTrace();
-        }
+                        recipe.setImage(byteObjects);
+
+                        return recipe;
+
+                    }catch (IOException e){
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                });
+        recipeReactiveRepository.save(recipeMono.block()).block();
+        return Mono.empty();
+
+
+
+//老版
+//        log.debug("Received a file.");
+//        try{
+//            Recipe recipe = recipeReactiveRepository.findById(recipeId).block();
+//            //按照MultipartFile的长度  建立Byte[]
+//            Byte[] bytesObjects = new Byte[file.getBytes().length];
+//
+//            int i = 0;
+//            // 用byte  把file文件的值全部复制出来
+//            for (byte b : file.getBytes()){
+//                bytesObjects[i++] = b;
+//            }
+//
+//            recipe.setImage(bytesObjects);
+//
+//           recipeReactiveRepository.save(recipe).block();
+//        }catch (IOException e){
+//            //todo handle better
+//            log.error("Error occurred",e);
+//            e.printStackTrace();
+//        }
     }
 }
